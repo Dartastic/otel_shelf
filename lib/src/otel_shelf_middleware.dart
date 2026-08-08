@@ -2,7 +2,9 @@
 // Copyright 2025, Mindful Software LLC, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:shelf/shelf.dart';
+// `shelf` also exports a `Server` type; hide it so the unprefixed `Server`
+// here is unambiguously the OTel semconv attribute group.
+import 'package:shelf/shelf.dart' hide Server;
 
 import 'shelf_suppression.dart';
 
@@ -41,8 +43,8 @@ class _HeaderGetter implements TextMapGetter<String> {
 /// Span shape:
 /// - name: `HTTP <METHOD>` (low cardinality; URL is on `url.full`)
 /// - kind: `SERVER`
-/// - attributes: `http.request.method`, `http.method` (legacy),
-///   `url.full`, `server.address`, `http.response.status_code`
+/// - attributes: `http.request.method`, `url.full`,
+///   `server.address`, `http.response.status_code`
 /// - status: `Error` on 5xx (4xx is "client error" — kept unset by
 ///   default per OTel HTTP semconv; override with [errorStatusBuilder]
 ///   if you want 4xx to flip status).
@@ -68,14 +70,13 @@ Middleware otelShelfMiddleware({
       final method = request.method.toUpperCase();
       final url = request.requestedUri;
       final attrs = <String, Object>{
-        Http.requestMethod.key: method,
-        'http.method': method,
+        Http.httpRequestMethod.key: method,
         Url.urlFull.key: url.toString(),
       };
       if (url.host.isNotEmpty) {
-        attrs[ServerResource.serverAddress.key] = url.host;
+        attrs[Server.serverAddress.key] = url.host;
       }
-      if (url.hasPort) attrs[ServerResource.serverPort.key] = url.port;
+      if (url.hasPort) attrs[Server.serverPort.key] = url.port;
 
       final span = t.startSpan(
         'HTTP $method',
@@ -88,7 +89,7 @@ Middleware otelShelfMiddleware({
         final response = await inner(request);
         span.addAttributes(OTel.attributes([
           OTel.attributeInt(
-            Http.responseStatusCode.key,
+            Http.httpResponseStatusCode.key,
             response.statusCode,
           ),
         ]));
@@ -102,7 +103,7 @@ Middleware otelShelfMiddleware({
       } catch (e, st) {
         span.addAttributes(OTel.attributes([
           OTel.attributeString(
-            ErrorResource.errorType.key,
+            ErrorAttributes.errorType.key,
             e.runtimeType.toString(),
           ),
         ]));

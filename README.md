@@ -23,8 +23,8 @@ Each request:
 - name: `HTTP <METHOD>` (URL is on `url.full`, kept off the name
   for cardinality)
 - kind: SERVER
-- `http.request.method`, `http.method` (legacy), `url.full`,
-  `server.address`, `server.port`, `http.response.status_code`
+- `http.request.method`, `url.full`, `server.address`,
+  `server.port`, `http.response.status_code`
 - 5xx → span status `Error`. 4xx unset by default (per OTel HTTP
   semconv — override with `errorStatusBuilder`).
 
