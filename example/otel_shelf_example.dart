@@ -17,11 +17,10 @@ Future<void> main() async {
   // variables (e.g. OTEL_EXPORTER_OTLP_ENDPOINT).
   await OTel.initialize(serviceName: 'otel-shelf-example');
 
-  final handler = const Pipeline()
-      .addMiddleware(otelShelfMiddleware())
-      .addHandler(
-        (request) => Response.ok('hello, ${request.url.path}\n'),
-      );
+  final handler =
+      const Pipeline().addMiddleware(otelShelfMiddleware()).addHandler(
+            (request) => Response.ok('hello, ${request.url.path}\n'),
+          );
 
   final server = await io.serve(handler, 'localhost', 8080);
   print('Serving at http://${server.address.host}:${server.port}');
