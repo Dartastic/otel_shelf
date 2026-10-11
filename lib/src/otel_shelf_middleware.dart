@@ -1,7 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Mindful Software LLC, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 // `shelf` also exports a `Server` type; hide it so the unprefixed `Server`
 // here is unambiguously the OTel semconv attribute group.
 import 'package:shelf/shelf.dart' hide Server;
@@ -49,11 +49,10 @@ class _HeaderGetter implements TextMapGetter<String> {
 ///   default per OTel HTTP semconv; override with [errorStatusBuilder]
 ///   if you want 4xx to flip status).
 Middleware otelShelfMiddleware({
-  Tracer? tracer,
+  APITracer? tracer,
   bool Function(int statusCode)? errorStatusBuilder,
 }) {
-  final t = tracer ?? OTel.tracerProvider().getTracer(_tracerName);
-  final propagator = W3CTraceContextPropagator();
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer(_tracerName);
   final isError = errorStatusBuilder ?? (code) => code >= 500;
 
   return (Handler inner) {
@@ -61,7 +60,9 @@ Middleware otelShelfMiddleware({
       if (shelfInstrumentationSuppressed()) return inner(request);
 
       final headers = Map<String, String>.from(request.headers);
-      final extractedContext = propagator.extract(
+      // The app's configured propagators (W3C trace context + baggage by
+      // default; OTEL_PROPAGATORS overrides).
+      final extractedContext = OTelAPI.textMapPropagator.extract(
         Context.current,
         headers,
         _HeaderGetter(headers),
@@ -82,13 +83,13 @@ Middleware otelShelfMiddleware({
         'HTTP $method',
         kind: SpanKind.server,
         context: extractedContext,
-        attributes: OTel.attributesFromMap(attrs),
+        attributes: OTelAPI.attributesFromMap(attrs),
       );
 
       try {
         final response = await inner(request);
-        span.addAttributes(OTel.attributes([
-          OTel.attributeInt(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt(
             Http.httpResponseStatusCode.key,
             response.statusCode,
           ),
@@ -101,8 +102,8 @@ Middleware otelShelfMiddleware({
         }
         return response;
       } catch (e, st) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
             ErrorAttributes.errorType.key,
             e.runtimeType.toString(),
           ),
