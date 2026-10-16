@@ -1,8 +1,7 @@
 name: otel_shelf
 description: >-
-  OpenTelemetry instrumentation for `package:shelf`. Middleware that opens a
-  SERVER span per request, extracts the inbound W3C traceparent and records
-  `http.*` semconv attributes.
+  OpenTelemetry instrumentation for shelf by Dartastic.io. Adds standard
+  OpenTelemetry observability to applications that use shelf.
 version: 2.0.1-wip
 repository: https://github.com/dartastic/otel_shelf
 homepage: https://dartastic.io
