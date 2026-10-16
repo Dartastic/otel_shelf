@@ -2,6 +2,10 @@
 
 ## [2.0.1-wip]
 
+### Changed
+
+- README: standard header naming the instrumented library, its supported platforms and project links; pubspec description to match.
+
 ## [2.0.0] - 2026-10-11
 
 ### Changed
